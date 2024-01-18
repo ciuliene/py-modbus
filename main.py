@@ -23,10 +23,13 @@ def get_arguments() -> argparse.Namespace:
     args = parser.parse_args()
 
     if not args.message and not args.file:
-        raise Exception('You must provide a message or a file')
+        # print(f'\033[31mError: You must provide a message or a file\033[0m')
+        parser.error('\033[31mYou must provide a message or a file\033[0m')
 
     if not args.message and args.file and not os.path.exists(args.file):
-        raise Exception(f'File {args.file} does not exist')
+        abs_path_file = os.path.abspath(args.file)
+        parser.error(f"\033[31mFile '\033[33m{
+                     abs_path_file}\033[31m' does not exist\033[0m")
 
     return args
 
