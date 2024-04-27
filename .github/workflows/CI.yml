@@ -40,6 +40,7 @@ jobs:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
     - name: Update version
+      if: ${{ matrix.python-version }} == '3.12'
       run: |
         git fetch --tags
         tag_name=$(git describe --tags $(git rev-list --tags --max-count=1))
