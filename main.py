@@ -1,6 +1,6 @@
 import argparse
 from io import TextIOWrapper
-from pyrocketmodbus.pyrocketmodbus import RocketModbus
+from pyrocketmodbus import RocketModbus
 from src.message import Message
 import os
 import time
@@ -23,13 +23,12 @@ def get_arguments() -> argparse.Namespace:
     args = parser.parse_args()
 
     if not args.message and not args.file:
-        # print(f'\033[31mError: You must provide a message or a file\033[0m')
         parser.error('\033[31mYou must provide a message or a file\033[0m')
 
     if not args.message and args.file and not os.path.exists(args.file):
         abs_path_file = os.path.abspath(args.file)
-        parser.error(f"\033[31mFile '\033[33m{
-                     abs_path_file}\033[31m' does not exist\033[0m")
+        parser.error(
+            f"\033[31mFile '\033[33m{abs_path_file}\033[31m' does not exist\033[0m")
 
     return args
 
@@ -49,7 +48,6 @@ def send_messages(messages: list[list[str]], destination: TextIOWrapper = None, 
 
         responses.append(Message(send, recv))
 
-        # if verbose:
         if result:
             rocket.log_message(recv, prefix='\tRX')
         else:
@@ -105,6 +103,7 @@ def py_modbus(args: argparse.Namespace):
         print(f'\033[31m{e}\033[0m')
         return False
 
-if __name__ == '__main__':
+
+if __name__ == '__main__':  # pragma: no cover
     args = get_arguments()
     py_modbus(args)
