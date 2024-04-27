@@ -1,5 +1,7 @@
 # py-modbus
 
+[![codecov](https://codecov.io/gh/ciuliene/py-modbus/graph/badge.svg?token=C11TGTYP5F)](https://codecov.io/gh/ciuliene/py-modbus)
+
 Communicate with devices through serial using Modbus protocol.
 
 ## Installation

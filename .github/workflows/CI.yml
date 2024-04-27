@@ -7,6 +7,9 @@ on:
   push:
     branches: [ "main" ]
 
+permissions:
+  contents: read
+
 jobs:
   build:
 
@@ -14,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.12"]
 
     steps:
     - uses: actions/checkout@v3
@@ -30,4 +33,21 @@ jobs:
     - name: Test application
       run: |
         coverage run --omit tests/*,*__init__.py -m unittest discover -s ./tests -v && coverage lcov -o lcov.info && coverage report
-    
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Update version
+      run: |
+        git fetch --tags
+        tag_name=$(git describe --tags $(git rev-list --tags --max-count=1))
+        IFS='.' read -r -a version <<< "$tag_name"
+        patch=$((version[2]+1))
+        new_tag="${version[0]}.${version[1]}.$patch"
+        echo "tag_name=$new_tag" >> "$GITHUB_OUTPUT"
+
+        git tag $new_tag
+        git push origin $new_tag
+        echo "New version: $new_tag"
