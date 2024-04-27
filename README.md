@@ -1,11 +1,11 @@
 # py-modbus
 
-Send modbus commands to a device and get the responses.
+Communicate with devices through serial using Modbus protocol.
 
 ## Installation
 
 ```sh
-pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://pypi.org/simple -r requirements.txt
+pip install -r requirements.txt
 ```
 
 ## Usage
@@ -13,7 +13,7 @@ pip install --index-url https://test.pypi.org/simple/ --extra-index-url https://
 ```sh
 usage: main.py [-h] [-m MESSAGE] [-f FILE] [-d DESTINATION] [-c] [-v]
 
-Send Modbus messages through serial.
+Communicate with devices through serial using Modbus protocol.
 
 options:
   -h, --help            show this help message and exit

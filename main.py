@@ -9,7 +9,7 @@ import tempfile
 
 def get_arguments() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description='Send Modbus messages through serial.')
+        description='Communicate with devices through serial using Modbus protocol.')
     parser.add_argument('-m', '--message', dest='message',
                         help='message to send')
     parser.add_argument('-f', '--file', dest='file',
