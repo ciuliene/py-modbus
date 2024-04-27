@@ -71,9 +71,9 @@ class TestMain(unittest.TestCase):
     def test_sending_message_save_communication_into_destination_file(self, mock_send, mock_log, *_):
         # Arrange
         args = self.get_arguments(
-            message='0x01 0x03 0x00 0x00 0x00 0x01 0x84 0x0A', verbose=True)
+            message='0x01 0x02 0x03', verbose=True)
         mock_send.return_value = (
-            True, ([int(x, 16) for x in args.message.split()], [int(x, 16) for x in args.message.split()]))
+            True, ([1, 2, 3], [10, 20, 30]))
         mock_destination = MagicMock()
 
         # Act
@@ -82,8 +82,9 @@ class TestMain(unittest.TestCase):
             destination=mock_destination)
 
         # Assert
-        self.assertIn(call(f'{str(Message([int(x, 16) for x in args.message.split()], [int(
-            x, 16) for x in args.message.split()]))}\n'), mock_destination.write.mock_calls)
+        self.assertIn(
+            call(f'{str(Message([1, 2, 3], [10, 20, 30]))}\n'),
+            mock_destination.write.mock_calls)
 
     def test_parsing_file_skips_comments(self, *_):
         # Arrange
@@ -97,16 +98,20 @@ class TestMain(unittest.TestCase):
 
     def test_message_returns_expected_string(self, *_):
         # Arrange
-        sent = [1, 3, 0, 0, 0, 1, 132, 10]
-        received = [1, 3, 0, 0, 0, 1, 132, 10]
+        sent = [0, 10, 20, 30]
+        received = [40, 60, 80, 100]
 
         # Act
         message = Message(sent, received)
 
         # Assert
-        self.assertEqual(str(
-            message), '0x01 - 0x03 - 0x00 - 0x00 - 0x00 - 0x01 - 0x84 - 0x0A    ->    0x01 - 0x03 - 0x00 - 0x00 - 0x00 - 0x01 - 0x84 - 0x0A')
+        self.assertEqual(
+            str(message),
+            '0x00 - 0x0A - 0x14 - 0x1E    ->    0x28 - 0x3C - 0x50 - 0x64')
 
+    @patch('main.send_messages')
+    @patch('builtins.open')
+    @patch('tempfile.NamedTemporaryFile')
     def test_py_modbus_returns_true_when_message_is_sent_correctly(self, *_):
         # Arrange
         args = self.get_arguments(
@@ -118,6 +123,8 @@ class TestMain(unittest.TestCase):
         # Assert
         self.assertTrue(result)
 
+    @patch('main.send_messages')
+    @patch('tempfile.NamedTemporaryFile')
     @patch('builtins.open')
     def test_py_modbus_writes_into_destination_the_response(self, mock_open, *_):
         # Arrange
@@ -130,6 +137,9 @@ class TestMain(unittest.TestCase):
         # Assert
         self.assertIn(call('test.txt', 'w'), mock_open.mock_calls)
 
+    @patch('main.send_messages')
+    @patch('builtins.open')
+    @patch('tempfile.NamedTemporaryFile')
     @patch('time.sleep')
     def test_py_modbus_continuous_until_keyboard_interrupt(self, mock_sleep, *_):
         # Arrange
@@ -144,6 +154,8 @@ class TestMain(unittest.TestCase):
         mock_sleep.assert_called_with(0.05)
         self.assertTrue(result)
 
+    @patch('main.send_messages')
+    @patch('tempfile.NamedTemporaryFile')
     @patch('builtins.open')
     def test_py_modbus_returns_false_when_exception_is_raised(self, mock_write, *_):
         # Arrange

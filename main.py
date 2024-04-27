@@ -51,7 +51,7 @@ def send_messages(messages: list[list[str]], destination: TextIOWrapper = None, 
         if result:
             rocket.log_message(recv, prefix='\tRX')
         else:
-            print(f'Error: {recv}')
+            print(f'Error: {recv}')  # pragma: no cover
 
         if destination:
             destination.write(f'{str(responses[-1])}\n')
