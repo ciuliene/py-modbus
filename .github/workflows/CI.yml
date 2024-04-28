@@ -35,6 +35,7 @@ jobs:
         coverage run --omit tests/*,*__init__.py -m unittest discover -s ./tests -v && coverage lcov -o lcov.info && coverage report
 
     - name: Upload coverage reports
+      if: matrix.python-version == '3.12' 
       uses: codecov/codecov-action@v3
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
