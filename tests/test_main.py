@@ -9,12 +9,24 @@ from argparse import Namespace
 @patch('sys.stdout')
 class TestMain(unittest.TestCase):
 
-    def get_arguments(self, message: str = None, file: str = None, destination: str = None, continuous: bool = False, verbose: bool = False):
+    def get_arguments(
+            self, 
+            message: str | None = None, 
+            file: str | None = None, 
+            destination: str | None = None, 
+            port: str | None = None, 
+            baudrate: int = 9600, 
+            continuous: bool = False, 
+            skip_crc: bool = False,
+            verbose: bool = False):
         args = Namespace()
         args.message = message
         args.file = file
         args.destination = destination
+        args.port = port
+        args.baudrate = baudrate
         args.continuous = continuous
+        args.skip_crc = skip_crc
         args.verbose = verbose
         return args
 
@@ -46,7 +58,7 @@ class TestMain(unittest.TestCase):
 
         # Act
         with self.assertRaises(Exception):
-            send_messages(args)
+            send_messages(args) # type: ignore
 
     @patch.object(RocketModbus, 'open', return_value=True)
     @patch.object(RocketModbus, 'log_message')

@@ -16,8 +16,12 @@ def get_arguments() -> argparse.Namespace:
                         help='path to file where to get messages to send (if \'-m\' is provided, this argument is ignored)')
     parser.add_argument('-d', '--destination', dest='destination',
                         help='destination file for responses. Optional, if not provided the responses are printed on the console')
+    parser.add_argument('-p', '--port', dest='port', help='serial port')
+    parser.add_argument('-b', '--baudrate', dest='baudrate', help='baudrate')
     parser.add_argument('-c', '--continuous', dest='continuous',
                         help='send messages continuously', action='store_true')
+    parser.add_argument('-s', '--skip-crc', dest='skip_crc', help='skip CRC',
+                        action='store_true')
     parser.add_argument('-v', '--verbose', dest='verbose',
                         help='print sent messages', action='store_true')
     args = parser.parse_args()
@@ -33,15 +37,15 @@ def get_arguments() -> argparse.Namespace:
     return args
 
 
-def send_messages(messages: list[list[str]], destination: TextIOWrapper = None, verbose: bool = False) -> list[Message]:
+def send_messages(messages: list[list[str]], destination: TextIOWrapper | None = None, verbose: bool = False, port: str | None = None, baudrate: int = 9600, skip_crc: bool = False) -> list[Message]:
     rocket = RocketModbus()
 
-    if not rocket.open():
+    if not rocket.open(port=port, baudrate=baudrate):
         raise Exception('Error opening serial port')
 
     responses = []
     for message in messages:
-        result, (send, recv) = rocket.send_message(message)
+        result, (send, recv) = rocket.send_message(message, CRC=skip_crc)
 
         if verbose:
             rocket.log_message(send, prefix='TX')
@@ -86,7 +90,7 @@ def py_modbus(args: argparse.Namespace):
 
                 destination = open(
                     args.destination, 'w') if args.destination else None
-                send_messages(messages, destination, args.verbose)
+                send_messages(messages, destination, args.verbose, args.port, int(args.baudrate or 9600), args.skip_crc)
                 if destination:
                     destination.close()
 
