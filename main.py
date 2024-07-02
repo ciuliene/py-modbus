@@ -90,8 +90,8 @@ def py_modbus(args: argparse.Namespace):
                     raise Exception('Error opening serial port')
 
                 send_messages(rocket, messages, destination, args.verbose, args.skip_crc)
-                if destination:
-                    destination.close()
+                
+                destination.close() if destination else None
 
             if not args.continuous:
                 break

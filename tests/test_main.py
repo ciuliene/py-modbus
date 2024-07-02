@@ -122,6 +122,7 @@ class TestMain(unittest.TestCase):
             str(message),
             '0x00 - 0x0A - 0x14 - 0x1E    ->    0x28 - 0x3C - 0x50 - 0x64')
 
+    @patch.object(RocketModbus, 'open', return_value=True)
     @patch('main.send_messages')
     @patch('builtins.open')
     @patch('tempfile.NamedTemporaryFile')
@@ -150,6 +151,7 @@ class TestMain(unittest.TestCase):
         # Assert
         self.assertIn(call('test.txt', 'w'), mock_open.mock_calls)
 
+    @patch.object(RocketModbus, 'open', return_value=True)
     @patch('main.send_messages')
     @patch('builtins.open')
     @patch('tempfile.NamedTemporaryFile')
