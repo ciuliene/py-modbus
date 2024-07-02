@@ -1,5 +1,5 @@
 class Message:
-    def __init__(self, sent: list[int], received: list[int] | int) -> None:
+    def __init__(self, sent: list[int], received: list[int]) -> None:
         self.sent = sent
         self.received = received
         self.error = type(received) == int

@@ -60,36 +60,37 @@ class TestMain(unittest.TestCase):
         with self.assertRaises(Exception):
             send_messages(args) # type: ignore
 
-    @patch.object(RocketModbus, 'open', return_value=True)
-    @patch.object(RocketModbus, 'log_message')
-    @patch.object(RocketModbus, 'send_message')
-    def test_sending_message_logs_sent_message(self, mock_send, mock_log, *_):
+    def test_sending_message_logs_sent_message(self, *_):
         # Arrange
         args = self.get_arguments(
             message='0x01 0x03 0x00 0x00 0x00 0x01 0x84 0x0A', verbose=True)
-        mock_send.return_value = (
-            True, (args.message.split(), args.message.split()))
+        mock_rocket = MagicMock()
+        mock_rocket.open = MagicMock(return_value=True)
+        mock_rocket.send_message = MagicMock(return_value=(True, (args.message.split(), args.message.split())))
+        mock_log = MagicMock()
+        mock_rocket.log_message = mock_log
 
         # Act
-        send_messages(messages=[args.message.split()], verbose=True)
+        send_messages(mock_rocket, messages=[args.message.split()], verbose=True)
 
         # Assert
         self.assertIn(
             call(args.message.split(), prefix='TX'), mock_log.mock_calls)
 
-    @patch.object(RocketModbus, 'open', return_value=True)
-    @patch.object(RocketModbus, 'log_message')
-    @patch.object(RocketModbus, 'send_message')
-    def test_sending_message_save_communication_into_destination_file(self, mock_send, mock_log, *_):
+    def test_sending_message_save_communication_into_destination_file(self, *_):
         # Arrange
         args = self.get_arguments(
             message='0x01 0x02 0x03', verbose=True)
-        mock_send.return_value = (
-            True, ([1, 2, 3], [10, 20, 30]))
         mock_destination = MagicMock()
+        mock_rocket = MagicMock()
+        mock_rocket.open = MagicMock(return_value=True)
+        mock_rocket.send_message = MagicMock(return_value=(True, ([1,2,3], [10,20,30])))
+        mock_log = MagicMock()
+        mock_rocket.log_message = mock_log
 
         # Act
         send_messages(
+            mock_rocket,
             messages=[args.message.split()],
             destination=mock_destination)
 
@@ -175,6 +176,21 @@ class TestMain(unittest.TestCase):
             message='0x01 0x03 0x00 0x00 0x00 0x01 0x84 0x0A')
         mock_write.side_effect = Exception()
 
+        # Act
+        result = py_modbus(args)
+
+        # Assert
+        self.assertFalse(result)
+
+    @patch('main.send_messages')
+    @patch('tempfile.NamedTemporaryFile')
+    @patch('builtins.open')
+    @patch.object(RocketModbus, 'open', return_value=False)
+    def test_py_modbus_returns_false_when_fails_to_open_port(self, *_):
+        # Arrange
+        args = self.get_arguments(
+            message='0x01 0x03 0x00 0x00 0x00 0x01 0x84 0x0A')
+        
         # Act
         result = py_modbus(args)
 

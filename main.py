@@ -37,12 +37,7 @@ def get_arguments() -> argparse.Namespace:
     return args
 
 
-def send_messages(messages: list[list[str]], destination: TextIOWrapper | None = None, verbose: bool = False, port: str | None = None, baudrate: int = 9600, skip_crc: bool = False) -> list[Message]:
-    rocket = RocketModbus()
-
-    if not rocket.open(port=port, baudrate=baudrate):
-        raise Exception('Error opening serial port')
-
+def send_messages(rocket: RocketModbus, messages: list[list[str]], destination: TextIOWrapper | None = None, verbose: bool = False, skip_crc: bool = False) -> list[Message]:
     responses = []
     for message in messages:
         result, (send, recv) = rocket.send_message(message, CRC=skip_crc)
@@ -59,8 +54,6 @@ def send_messages(messages: list[list[str]], destination: TextIOWrapper | None =
 
         if destination:
             destination.write(f'{str(responses[-1])}\n')
-
-    rocket.close()
     return responses
 
 
@@ -82,6 +75,8 @@ def py_modbus(args: argparse.Namespace):
             temp.write(args.message)
             temp.close()
             args.file = temp.name
+        
+        rocket = RocketModbus()
 
         while True:
             with open(args.file, 'r') as file:
@@ -90,7 +85,11 @@ def py_modbus(args: argparse.Namespace):
 
                 destination = open(
                     args.destination, 'w') if args.destination else None
-                send_messages(messages, destination, args.verbose, args.port, int(args.baudrate or 9600), args.skip_crc)
+
+                if not rocket.open(port=args.port, baudrate=int(args.baudrate or 9600)):
+                    raise Exception('Error opening serial port')
+
+                send_messages(rocket, messages, destination, args.verbose, args.skip_crc)
                 if destination:
                     destination.close()
 
@@ -106,7 +105,11 @@ def py_modbus(args: argparse.Namespace):
     except Exception as e:
         print(f'\033[31m{e}\033[0m')
         return False
+    finally:
+        close_port(rocket=rocket)
 
+def close_port(rocket: RocketModbus):
+    rocket.close()
 
 if __name__ == '__main__':  # pragma: no cover
     args = get_arguments()
