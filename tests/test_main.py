@@ -10,15 +10,16 @@ from argparse import Namespace
 class TestMain(unittest.TestCase):
 
     def get_arguments(
-            self, 
-            message: str | None = None, 
-            file: str | None = None, 
-            destination: str | None = None, 
-            port: str | None = None, 
-            baudrate: int = 9600, 
-            continuous: bool = False, 
+            self,
+            message: str | None = None,
+            file: str | None = None,
+            destination: str | None = None,
+            port: str | None = None,
+            baudrate: int = 9600,
+            continuous: bool = False,
             skip_crc: bool = False,
-            verbose: bool = False):
+            verbose: bool = False,
+            crc: bool = False) -> Namespace:
         args = Namespace()
         args.message = message
         args.file = file
@@ -28,6 +29,7 @@ class TestMain(unittest.TestCase):
         args.continuous = continuous
         args.skip_crc = skip_crc
         args.verbose = verbose
+        args.crc = crc
         return args
 
     @patch('sys.exit')
@@ -58,7 +60,7 @@ class TestMain(unittest.TestCase):
 
         # Act
         with self.assertRaises(Exception):
-            send_messages(args) # type: ignore
+            send_messages(args)  # type: ignore
 
     def test_sending_message_logs_sent_message(self, *_):
         # Arrange
@@ -66,12 +68,14 @@ class TestMain(unittest.TestCase):
             message='0x01 0x03 0x00 0x00 0x00 0x01 0x84 0x0A', verbose=True)
         mock_rocket = MagicMock()
         mock_rocket.open = MagicMock(return_value=True)
-        mock_rocket.send_message = MagicMock(return_value=(True, (args.message.split(), args.message.split())))
+        mock_rocket.send_message = MagicMock(return_value=(
+            True, (args.message.split(), args.message.split())))
         mock_log = MagicMock()
         mock_rocket.log_message = mock_log
 
         # Act
-        send_messages(mock_rocket, messages=[args.message.split()], verbose=True)
+        send_messages(mock_rocket, messages=[
+                      args.message.split()], verbose=True)
 
         # Assert
         self.assertIn(
@@ -84,7 +88,8 @@ class TestMain(unittest.TestCase):
         mock_destination = MagicMock()
         mock_rocket = MagicMock()
         mock_rocket.open = MagicMock(return_value=True)
-        mock_rocket.send_message = MagicMock(return_value=(True, ([1,2,3], [10,20,30])))
+        mock_rocket.send_message = MagicMock(
+            return_value=(True, ([1, 2, 3], [10, 20, 30])))
         mock_log = MagicMock()
         mock_rocket.log_message = mock_log
 
@@ -121,6 +126,20 @@ class TestMain(unittest.TestCase):
         self.assertEqual(
             str(message),
             '0x00 - 0x0A - 0x14 - 0x1E    ->    0x28 - 0x3C - 0x50 - 0x64')
+
+    @patch.object(RocketModbus, 'log_message')
+    def test_getting_message_with_crc_returns_expected_arguments(self, mock_log, *_):
+        # Arrange
+        args = self.get_arguments(message='1 3 0 0 0 1', crc=True)
+
+        # Act
+        result = py_modbus(args)
+
+        # Assert
+        self.assertIsNone(result)
+        self.assertIn(
+            call([1, 3, 0, 0, 0, 1, 132, 10],
+            prefix='MSG'), mock_log.mock_calls)
 
     @patch.object(RocketModbus, 'open', return_value=True)
     @patch('main.send_messages')
@@ -192,12 +211,13 @@ class TestMain(unittest.TestCase):
         # Arrange
         args = self.get_arguments(
             message='0x01 0x03 0x00 0x00 0x00 0x01 0x84 0x0A')
-        
+
         # Act
         result = py_modbus(args)
 
         # Assert
         self.assertFalse(result)
+
 
 if __name__ == '__main__':
     unittest.main()

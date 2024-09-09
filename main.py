@@ -24,6 +24,7 @@ def get_arguments() -> argparse.Namespace:
                         action='store_true')
     parser.add_argument('-v', '--verbose', dest='verbose',
                         help='print sent messages', action='store_true')
+    parser.add_argument('-C', '--crc', dest='crc', help='Generate Modbus message with CRC and skip send', action='store_true')
     args = parser.parse_args()
 
     if not args.message and not args.file:
@@ -40,7 +41,7 @@ def get_arguments() -> argparse.Namespace:
 def send_messages(rocket: RocketModbus, messages: list[list[str]], destination: TextIOWrapper | None = None, verbose: bool = False, skip_crc: bool = False) -> list[Message]:
     responses = []
     for message in messages:
-        result, (send, recv) = rocket.send_message(message, CRC=skip_crc)
+        result, (send, recv) = rocket.send_message(message, skip_crc=skip_crc)
 
         if verbose:
             rocket.log_message(send, prefix='TX')
@@ -83,12 +84,18 @@ def py_modbus(args: argparse.Namespace):
                 content = file.readlines()
                 messages = parse_file(content)
 
+                if args.crc:
+                    for message in messages:
+                        msg = rocket.prepare_message(message)
+                        rocket.log_message(msg, prefix='MSG')
+                        pass
+                    return
+
                 destination = open(
                     args.destination, 'w') if args.destination else None
 
                 if not rocket.open(port=args.port, baudrate=int(args.baudrate or 9600)):
                     raise Exception('Error opening serial port')
-
                 send_messages(rocket, messages, destination, args.verbose, args.skip_crc)
                 
                 destination.close() if destination else None
