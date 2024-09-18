@@ -5,6 +5,7 @@ from src.message import Message
 import os
 import time
 import tempfile
+import re
 
 
 def get_arguments() -> argparse.Namespace:
@@ -63,10 +64,20 @@ def parse_file(lines: list[str]) -> list[list[str]]:
     for line in lines:
         if line[0] == '#' or line[0] == '\n':
             continue
-        m = line.split(' ')
+        m = parse_hex_string(line, hex="0x" in line)
         messages.append(m)
     return messages
 
+def parse_hex_string(input_string, hex: bool = True):
+    # Regular expression to match hex values and quoted strings
+    pattern = r"(0x[0-9A-Fa-f]+|'[^']*')"
+    if not hex:
+        pattern = r"[^ ]+"
+    
+    # Find all matches in the input string
+    matches = re.findall(pattern, input_string)
+    
+    return matches
 
 def py_modbus(args: argparse.Namespace):
     try:
