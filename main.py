@@ -26,15 +26,17 @@ def get_arguments() -> argparse.Namespace:
     parser.add_argument('-v', '--verbose', dest='verbose',
                         help='print sent messages', action='store_true')
     parser.add_argument('-C', '--crc', dest='crc', help='Generate Modbus message with CRC and skip send', action='store_true')
+    parser.add_argument('-n', '--net-scan', dest='net_scan', help='Network scan', action='store_true')
     args = parser.parse_args()
 
-    if not args.message and not args.file:
-        parser.error('\033[31mYou must provide a message or a file\033[0m')
+    if not args.net_scan:
+        if not args.message and not args.file:
+            parser.error('\033[31mYou must provide a message or a file\033[0m')
 
-    if not args.message and args.file and not os.path.exists(args.file):
-        abs_path_file = os.path.abspath(args.file)
-        parser.error(
-            f"\033[31mFile '\033[33m{abs_path_file}\033[31m' does not exist\033[0m")
+        if not args.message and args.file and not os.path.exists(args.file):
+            abs_path_file = os.path.abspath(args.file)
+            parser.error(
+                f"\033[31mFile '\033[33m{abs_path_file}\033[31m' does not exist\033[0m")
 
     return args
 
@@ -78,6 +80,30 @@ def parse_hex_string(input_string, hex: bool = True):
     matches = re.findall(pattern, input_string)
     
     return matches
+
+def scan_network(args: argparse.Namespace):
+    rocket = RocketModbus()
+
+    try: 
+        if not rocket.open(port=args.port, baudrate=int(args.baudrate or 9600)):
+            raise Exception('Error opening serial port')
+
+        start_message = "0x03 0x00 0x00 0x00 0x01"
+        messages = []
+        for i in range(1, 247):
+            msg = rocket.prepare_message(f'0x{i:02X} {start_message}'.split(' '))
+            messages.append(msg)
+        
+        send_messages(rocket, messages, verbose=True, skip_crc=False)
+        
+    except Exception as ex:
+        print(f'\033[31m{ex}\033[0m')
+    finally:
+        try:
+            rocket.close()
+        except:
+            pass
+
 
 def py_modbus(args: argparse.Namespace):
     try:
@@ -131,4 +157,8 @@ def close_port(rocket: RocketModbus):
 
 if __name__ == '__main__':  # pragma: no cover
     args = get_arguments()
-    py_modbus(args)
+
+    if args.net_scan:
+        scan_network(args)
+    else:
+        py_modbus(args)
